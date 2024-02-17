@@ -16,7 +16,7 @@ def llegeix_i_filtra_dades(ticker):
     print("LLEGINT DADES ................")
 
     # LLegim les dades de tots els anys que tinguem ordenades
-    all_files = glob.glob(os.path.join('.\\dades', "operacions_" + ticker + "*.csv"))
+    all_files = glob.glob(os.path.join('./dades', "operacions_" + ticker + "*.csv"))
     df = pd.concat((pd.read_csv(f) for f in sorted(all_files)), ignore_index=True)
 
     # Afegim columna amb l'import de l'operacio
