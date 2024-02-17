@@ -10,7 +10,6 @@ import_minim = 1
 import_minim_parcial = 15000
 import_maxim = 150000
 
-
 @st.cache_data
 def llegeix_i_filtra_dades(ticker):
     print("LLEGINT DADES ................")
@@ -25,20 +24,18 @@ def llegeix_i_filtra_dades(ticker):
     # Afegim columna amb l'import de l'operacio
     df['Import'] = df['Volum'] * df['Preu']
 
-    # Filtrem les dades
-    #  Que la Venue sigui Null i que l'operació sigui C o V
-    # df = df[((df['Import'] >= import_minim) & ((df['Operacio'] == 'C') | (df['Operacio'] == 'V')))]
-
     # Afegim la columna de datetime
     df['dia_hora'] = df['Dia'] + ' ' + df['Hora']
     df['datetime'] = pd.to_datetime(df['dia_hora'], format="%d/%m/%y %H:%M:%S")
 
     # Resetegem l'index
     df.reset_index(inplace=True)
+
     # Afegim el volum d'accions amb signe per poder saber quantes se n'han comp
     df['Signe'] = np.where(df['Operacio'] == 'C', 1, (np.where(df['Operacio'] == 'V', -1, 0)))
     df['Volum_signe'] = df['Volum'] * df['Signe']
 
+    # Busquem l'import màxim de totes les operacions per a posar a l'Slider
     import_maxim_slider = int(df['Import'].max())
 
     return df, import_maxim_slider
@@ -50,14 +47,13 @@ def main(df_principal, import_maxim_main):
 
     st.sidebar.title("Filtros")
 
-    filtre_import = st.sidebar.slider('Importe de la negociación', import_minim, import_maxim_main, (import_minim_parcial,
-                                                                                   import_maxim_main), format='%d EUR')
+    filtre_import = st.sidebar.slider('Importe de la negociación', import_minim, import_maxim_main,
+                                      (import_minim_parcial, import_maxim_main), format='%d EUR')
 
     # FILTRE PER LES DATES
     format_data = 'DD/MM/YY'
     data_inicial_tot = datetime.date(2022, 1, 1)
     data_inicial_parcial = datetime.date(2023, 1, 1)
-    # data_final = dt.datetime.now().date()
     data_final = df_principal['datetime'].max().date()
     filtre_dates = st.sidebar.slider('Rango de fechas', data_inicial_tot, data_final,
                                      (data_inicial_parcial, data_final), format=format_data)
@@ -108,33 +104,24 @@ def main(df_principal, import_maxim_main):
 
     hg.streamlit_highcharts(grafica, 640)
 
-    #################################################
     # La taula de baix
-
     df_principal = df_principal[['Dia', 'Hora', 'Preu', 'Volum', 'Import', 'Operacio', 'Cumsum_volum']]
     df_principal.columns = ['Dia', 'Hora', 'Precio', 'Volumen', 'Importe', 'Operación', 'Acumuladas']
-
     df_principal['Hora'] = df_principal['Hora'].str[:8]
 
     # ATENCIO STYLE NOMES ES POT APLICAR UN SOL COP , O COLOR O FORMAT !!!
-
-    df_principal = df_principal.style.format({'Precio': '{:.2f}', 'Importe': '{:,.0f} EUR', '# Acumuladas':'{:,.0f}'}, thousands='.',
-            decimal=',',)
+    df_principal = df_principal.style.format({'Precio': '{:.2f}', 'Importe': '{:,.0f} EUR', '# Acumuladas': '{:,.0f}'},
+                                             thousands='.', decimal=',',)
     st.dataframe(df_principal, hide_index=True, use_container_width=True)
 
-    # def highlight_survived(s):
-    #    return ['background-color: green'] * len(s) if s.Import>15000 else ['background-color: red'] * len(s)
-
-    # st.dataframe(df_sencer.style.apply(highlight_survived, axis=1), hide_index=True, use_container_width=True)
-
-    #################################################
-
+    # Explicació de la metodologia, a la sidebar
     st.sidebar.title("\n")
     st.sidebar.info('\n\nEstudio de las negociaciones de Ercros para los compañeros de Nemer'
                     '\n\n Mètodo usado:'
                     '\n 1) Obtención de los cruces desde 1/1/2022 en la Bolsa de Madrid'
                     '\n 2) La primera y la última negociación del día se consideran Subasta Inicial (SI) y Final (SF)'
-                    '\n 3) Si en la siguiente negociación el precio sube, consideramos que ha entrado una operación de Compra'
+                    '\n 3) Si en la siguiente negociación el precio sube, consideramos que ha entrado una operación '
+                    'de Compra'
                     '\n 4) Si el precio baja, consideramos que ha entrado una operación de Venta'
                     '\n 5) Si el precio se mantiene, consideramos que continua abierta la operación anterior'
                     '\n 6) Si es una compra sumamos el número de acciones al acumulado y si es una venta lo restamos'
