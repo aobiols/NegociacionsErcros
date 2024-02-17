@@ -50,7 +50,7 @@ def main(df_principal, import_maxim_main):
 
     st.sidebar.title("Filtros")
 
-    filtre_import = st.sidebar.slider('Importe', import_minim, import_maxim_main, (import_minim_parcial,
+    filtre_import = st.sidebar.slider('Importe de la negociación', import_minim, import_maxim_main, (import_minim_parcial,
                                                                                    import_maxim_main), format='%d EUR')
 
     # FILTRE PER LES DATES
@@ -86,9 +86,13 @@ def main(df_principal, import_maxim_main):
     combined2 = np.vstack((columna_data, columna_preu)).T.tolist()
 
     grafica = {
-        'series': [{'data': combined, 'name': 'Acumulado', 'tooltip': {'valueSuffix': ' acciones', 'shared': True}},
+        'lang': {
+            'thousandsSep': '.',
+            'decimalPoint': ','
+        },
+        'series': [{'data': combined, 'name': 'Acumuladas', 'tooltip': {'valueSuffix': ' acciones', 'shared': True}},
                    {'data': combined2, 'name': 'Precio',
-                    'tooltip': {'valueSuffix': ' EUR', 'shared': True},
+                    'tooltip': {'valueSuffix': ' EUR', 'shared': True, 'valueDecimals': 2},
                     'yAxis': 1, }],
         'xAxis': {
             'type': 'datetime',
@@ -98,7 +102,7 @@ def main(df_principal, import_maxim_main):
             'shared': True
         },
         'title': {'text': 'Negociaciones por volumen vs Precio'},
-        'yAxis': [{'title': {'text': 'Acumulado'}},
+        'yAxis': [{'title': {'text': 'Acumuladas'}},
                   {'title': {'text': 'Precio'}, 'opposite': True}]
     }
 
@@ -108,13 +112,14 @@ def main(df_principal, import_maxim_main):
     # La taula de baix
 
     df_principal = df_principal[['Dia', 'Hora', 'Preu', 'Volum', 'Import', 'Operacio', 'Cumsum_volum']]
-    df_principal.columns = ['Dia', 'Hora', 'Precio', 'Volumen', 'Importe', 'Operación', 'Acumulado']
+    df_principal.columns = ['Dia', 'Hora', 'Precio', 'Volumen', 'Importe', 'Operación', 'Acumuladas']
 
     df_principal['Hora'] = df_principal['Hora'].str[:8]
 
     # ATENCIO STYLE NOMES ES POT APLICAR UN SOL COP , O COLOR O FORMAT !!!
 
-    df_principal = df_principal.style.format({'Precio': '{:.2f}', 'Importe': '{:,.0f} EUR'})
+    df_principal = df_principal.style.format({'Precio': '{:.2f}', 'Importe': '{:,.0f} EUR', '# Acumuladas':'{:,.0f}'}, thousands='.',
+            decimal=',',)
     st.dataframe(df_principal, hide_index=True, use_container_width=True)
 
     # def highlight_survived(s):
@@ -129,9 +134,9 @@ def main(df_principal, import_maxim_main):
                     '\n\n Mètodo usado:'
                     '\n 1) Obtención de los cruces desde 1/1/2022 en la Bolsa de Madrid'
                     '\n 2) La primera i la última negociación del día se consideran Subasta Inicial (SI) i Final (SF)'
-                    '\n 3) Si el precio de la acción sube, consideramos que ha entrado una operación de Compra'
-                    '\n 4) Si el precio de la acción baja, consideramos que ha entrado una operación de Venta'
-                    '\n 5) Si el precio de la acción se mantiene, consideramos que continua la operación anterior'
+                    '\n 3) Si en la siguiente negociación el precio sube, consideramos que ha entrado una operación de Compra'
+                    '\n 4) Si el precio baja, consideramos que ha entrado una operación de Venta'
+                    '\n 5) Si el precio se mantiene, consideramos que continua abierta la operación anterior'
                     '\n 6) Si es una compra sumamos el número de acciones al acumulado i si es una venta lo restamos'
                     '\n 7) Si es una operación en Subasta, no computa para el acumulado'
                     '\n \n La idea es saber si hay una relacion entre las "grandes" compras/ventas y lo que sucederá '
