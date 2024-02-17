@@ -133,11 +133,11 @@ def main(df_principal, import_maxim_main):
     st.sidebar.info('\n\nEstudio de las negociaciones de Ercros para los compañeros de Nemer'
                     '\n\n Mètodo usado:'
                     '\n 1) Obtención de los cruces desde 1/1/2022 en la Bolsa de Madrid'
-                    '\n 2) La primera i la última negociación del día se consideran Subasta Inicial (SI) i Final (SF)'
+                    '\n 2) La primera y la última negociación del día se consideran Subasta Inicial (SI) y Final (SF)'
                     '\n 3) Si en la siguiente negociación el precio sube, consideramos que ha entrado una operación de Compra'
                     '\n 4) Si el precio baja, consideramos que ha entrado una operación de Venta'
                     '\n 5) Si el precio se mantiene, consideramos que continua abierta la operación anterior'
-                    '\n 6) Si es una compra sumamos el número de acciones al acumulado i si es una venta lo restamos'
+                    '\n 6) Si es una compra sumamos el número de acciones al acumulado y si es una venta lo restamos'
                     '\n 7) Si es una operación en Subasta, no computa para el acumulado'
                     '\n \n La idea es saber si hay una relacion entre las "grandes" compras/ventas y lo que sucederá '
                     'en un futuro')
