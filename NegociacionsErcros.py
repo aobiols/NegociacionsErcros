@@ -6,7 +6,7 @@ import datetime
 import glob
 import os
 
-import_minim = 1000
+import_minim = 1
 import_minim_parcial = 15000
 import_maxim = 150000
 
@@ -14,6 +14,9 @@ import_maxim = 150000
 @st.cache_data
 def llegeix_i_filtra_dades(ticker):
     print("LLEGINT DADES ................")
+
+    # Per poder-nos passar del màxim que és 262144
+    pd.set_option("styler.render.max_elements", 400000)
 
     # LLegim les dades de tots els anys que tinguem ordenades
     all_files = glob.glob(os.path.join('./dades', "operacions_" + ticker + "*.csv"))
@@ -24,7 +27,7 @@ def llegeix_i_filtra_dades(ticker):
 
     # Filtrem les dades
     #  Que la Venue sigui Null i que l'operació sigui C o V
-    df = df[((df['Import'] >= import_minim) & ((df['Operacio'] == 'C') | (df['Operacio'] == 'V')))]
+    # df = df[((df['Import'] >= import_minim) & ((df['Operacio'] == 'C') | (df['Operacio'] == 'V')))]
 
     # Afegim la columna de datetime
     df['dia_hora'] = df['Dia'] + ' ' + df['Hora']
@@ -33,7 +36,7 @@ def llegeix_i_filtra_dades(ticker):
     # Resetegem l'index
     df.reset_index(inplace=True)
     # Afegim el volum d'accions amb signe per poder saber quantes se n'han comp
-    df['Signe'] = np.where(df['Operacio'] == 'C', 1, -1)
+    df['Signe'] = np.where(df['Operacio'] == 'C', 1, (np.where(df['Operacio'] == 'V', -1, 0)))
     df['Volum_signe'] = df['Volum'] * df['Signe']
 
     import_maxim_slider = int(df['Import'].max())
@@ -63,7 +66,7 @@ def main(df_principal, import_maxim_main):
                 df_principal['datetime'] <= data_maxima)
     df_principal = df_principal.loc[mask_dates]
 
-    # FILTRE PELA IMPORTS
+    # FILTRE DELS IMPORTS
     df_principal = df_principal[df_principal['Import'].between(filtre_import[0], filtre_import[1])]
 
     # Calculem la Suma acumulada segons els filtres
@@ -83,12 +86,16 @@ def main(df_principal, import_maxim_main):
     combined2 = np.vstack((columna_data, columna_preu)).T.tolist()
 
     grafica = {
-        'series': [{'data': combined, 'name': 'Acumulado'},
+        'series': [{'data': combined, 'name': 'Acumulado', 'tooltip': {'valueSuffix': ' acciones', 'shared': True}},
                    {'data': combined2, 'name': 'Precio',
-                    'tooltip': {'valueSuffix': ' EUR'},
+                    'tooltip': {'valueSuffix': ' EUR', 'shared': True},
                     'yAxis': 1, }],
         'xAxis': {
             'type': 'datetime',
+        },
+        'tooltip': {
+            'split': False,
+            'shared': True
         },
         'title': {'text': 'Negociaciones por volumen vs Precio'},
         'yAxis': [{'title': {'text': 'Acumulado'}},
@@ -121,12 +128,12 @@ def main(df_principal, import_maxim_main):
     st.sidebar.info('\n\nEstudio de las negociaciones de Ercros para los compañeros de Nemer'
                     '\n\n Mètodo usado:'
                     '\n 1) Obtención de los cruces desde 1/1/2022 en la Bolsa de Madrid'
-                    '\n 2) La primera i la última negociacion del dia se consideran Subasta Inicial i Final (No '
-                    'cuentan)'
+                    '\n 2) La primera i la última negociación del día se consideran Subasta Inicial (SI) i Final (SF)'
                     '\n 3) Si el precio de la acción sube, consideramos que ha entrado una operación de Compra'
                     '\n 4) Si el precio de la acción baja, consideramos que ha entrado una operación de Venta'
-                    '\n 5) Si el precio de la acción se mantiene, consideramos que continua la operación Anterior'
+                    '\n 5) Si el precio de la acción se mantiene, consideramos que continua la operación anterior'
                     '\n 6) Si es una compra sumamos el número de acciones al acumulado i si es una venta lo restamos'
+                    '\n 7) Si es una operación en Subasta, no computa para el acumulado'
                     '\n \n La idea es saber si hay una relacion entre las "grandes" compras/ventas y lo que sucederá '
                     'en un futuro')
 
